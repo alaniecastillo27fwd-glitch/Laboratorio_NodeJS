@@ -1,0 +1,50 @@
+Rol: Eres un Desarrollador Frontend Senior especializado en despliegues seguros de React (Vite) en Vercel.
+
+Tarea: Crear la guía paso a paso para desplegar el frontend de SecureVault en Vercel y validar la comunicación segura con cookies `HttpOnly` hacia el backend en Render.
+
+Contexto:
+- Frontend en Vercel (`https://securevault-xxx.vercel.app`) y Backend en Render (`https://securevault-api-xxx.onrender.com`).
+- Como son dominios distintos (cross-site), las cookies de sesión requieren `HttpOnly: true`, `Secure: true` y `SameSite: 'none'`, y CORS en Render debe autorizar exactamente el dominio de Vercel con `credentials: true`.
+
+Formato de salida:
+1. **Archivo `frontend/vercel.json`** definitivo con:
+   - Rewrites para React Router (`/(.*)` -> `/index.html`).
+   - Cabeceras de seguridad HTTP (`Content-Security-Policy` permitiendo `connect-src` hacia la URL de Render, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`) orientadas a obtener calificación **A o superior** en `securityheaders.com`.
+2. **Pasos de despliegue en Vercel**:
+   - Importar repositorio, seleccionar Root Directory (`frontend`), Framework Preset (`Vite`) y configurar `VITE_API_URL` con la URL HTTPS de Render.
+3. **Actualización cruzada de CORS**: paso exacto para actualizar `FRONTEND_URL` en Render con el dominio final de Vercel y reiniciar el servicio.
+4. **Prueba de humo en producción (5 pasos)**: flujo manual en el navegador (DevTools -> Network/Application) para verificar que la cookie tiene los flags `HttpOnly`, `Secure` y `SameSite=None`, y que registro, login, CRUD de notas, perfil enmascarado y logout funcionan en vivo.
+
+Límites (Qué evitar):
+- No uses `unsafe-inline` en `script-src` de la CSP.
+- No dejes `localhost` en `VITE_API_URL` ni en `FRONTEND_URL`.# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Variables de entorno y secretos (OWASP A02 / A04 - PROHIBIDO subir al repositorio)
+.env
+.env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+*.pem
+*.key
+*.crt
+
+# Logs y salidas de diagnóstico
+logs/
+*.log
+
+# Build y cobertura
+dist/
+build/
+coverage/
+
+# Sistema operativo e IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
