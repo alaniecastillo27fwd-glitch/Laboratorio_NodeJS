@@ -1,0 +1,42 @@
+# =============================================================================
+# Configuración de Dependabot — Monitoreo de Cadena de Suministro (OWASP A03:2025)
+# =============================================================================
+version: 2
+updates:
+  # 1. Dependencias npm del Backend ('/backend')
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "backend"
+
+  # 2. Dependencias npm del Frontend ('/frontend')
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "frontend"
+
+  # 3. Actualizaciones de seguridad para acciones del workflow (.github/workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci-cd"
