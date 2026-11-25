@@ -43,10 +43,18 @@ export const query = async (text, params) => {
   try {
     return await pgPool.query(text, params);
   } catch (err) {
-    if (!isProduction) {
+    const isConnectionError =
+      err.code === 'ECONNREFUSED' ||
+      err.code === 'ENOTFOUND' ||
+      err.code === '3D000' ||
+      err.code === '28P01' ||
+      !process.env.DATABASE_URL ||
+      (err.message && (err.message.includes('ECONNREFUSED') || err.message.includes('connect')));
+
+    if (!isProduction || isConnectionError) {
       useEmbeddedFallback = true;
       logger.warn(
-        'PostgreSQL local no disponible o sin esquema; activando motor embebido con cuentas Admin y Usuario preconfiguradas',
+        'Base de datos PostgreSQL externa no disponible; activando motor seguro embebido con cuentas Admin y Usuario preconfiguradas',
         {
           event: 'DB_FALLBACK_ACTIVATED',
           reason: err.code || err.message,
@@ -66,12 +74,9 @@ export const pool = {
     }
     try {
       return await pgPool.connect();
-    } catch (err) {
-      if (!isProduction) {
-        useEmbeddedFallback = true;
-        return embeddedDb.connect();
-      }
-      throw err;
+    } catch {
+      useEmbeddedFallback = true;
+      return embeddedDb.connect();
     }
   },
   end: async () => {

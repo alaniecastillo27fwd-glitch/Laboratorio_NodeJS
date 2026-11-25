@@ -65,6 +65,7 @@ app.use(
       if (
         !origin ||
         allowedOrigins.has(origin) ||
+        /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin) ||
         (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))
       ) {
         return callback(null, true);
