@@ -1,0 +1,95 @@
+name: SecureVault DevSecOps CI Pipeline (OWASP A03 & A08)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # JOB 1: Escaneo de Secretos en Historial Git (Bonificación +10 pts / OWASP A04)
+  # ---------------------------------------------------------------------------
+  secret-scan:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # JOB 2: Integración Continua del Backend (/backend)
+  # ---------------------------------------------------------------------------
+  backend-ci:
+    name: Backend CI (npm ci, audit & node:test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+
+      - name: Deterministic Dependency Install (OWASP A03)
+        run: npm ci
+
+      - name: Supply Chain Security Audit (Fail on High/Critical - OWASP A03)
+        run: npm audit --audit-level=high
+
+      - name: Run Automated Security & Crypto Test Suite (OWASP A04 / A08)
+        env:
+          NODE_ENV: test
+          ENCRYPTION_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+          JWT_SECRET: 'ci_ephemeral_dummy_jwt_secret_for_unit_testing_only_64_bytes_long'
+          FRONTEND_URL: 'http://localhost:5173'
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # JOB 3: Integración Continua del Frontend (/frontend)
+  # ---------------------------------------------------------------------------
+  frontend-ci:
+    name: Frontend CI (npm ci, audit & Vite build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Deterministic Dependency Install (OWASP A03)
+        run: npm ci
+
+      - name: Supply Chain Security Audit (Fail on High/Critical - OWASP A03)
+        run: npm audit --audit-level=high
+
+      - name: Build Production React Bundle (OWASP A08)
+        env:
+          VITE_API_URL: 'https://securevault-api.onrender.com'
+        run: npm run build
